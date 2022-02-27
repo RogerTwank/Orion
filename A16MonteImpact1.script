@@ -1,0 +1,151 @@
+
+
+
+Create Spacecraft A16_LM;
+GMAT A16_LM.DateFormat = UTCGregorian;
+GMAT A16_LM.Epoch = '24 Apr 1972 20:54:12.000';             % from jettison
+
+% Param Order: Index,Latitude,Longitude,RMAG,VMAG,AZI,HFPA
+
+GMAT A16_LM.CoordinateSystem = LunaFixed;
+GMAT A16_LM.DisplayStateType = Planetodetic;
+
+GMAT A16_LM.PlanetodeticLAT = 1.150930282;
+GMAT A16_LM.PlanetodeticLON = 70.50817878;
+GMAT A16_LM.PlanetodeticRMAG = 1847.65065;
+GMAT A16_LM.PlanetodeticVMAG = 1.635904756;
+GMAT A16_LM.PlanetodeticAZI = -100.3913262;
+GMAT A16_LM.PlanetodeticHFPA = 0.432844974;
+
+GMAT A16_LM.DryMass = 2398;
+GMAT A16_LM.Cd = 2.2;
+GMAT A16_LM.Cr = 1.8;
+GMAT A16_LM.DragArea = 5;
+GMAT A16_LM.SRPArea = 5;
+GMAT A16_LM.NAIFId = -10001001;
+GMAT A16_LM.NAIFIdReferenceFrame = -9001001;
+GMAT A16_LM.OrbitColor = Red;
+GMAT A16_LM.TargetColor = Teal;
+GMAT A16_LM.OrbitErrorCovariance = [ 1e+070 0 0 0 0 0 ; 0 1e+070 0 0 0 0 ; 0 0 1e+070 0 0 0 ; 0 0 0 1e+070 0 0 ; 0 0 0 0 1e+070 0 ; 0 0 0 0 0 1e+070 ];
+GMAT A16_LM.CdSigma = 1e+070;
+GMAT A16_LM.CrSigma = 1e+070;
+GMAT A16_LM.Id = 'Eagle';
+GMAT A16_LM.Attitude = CoordinateSystemFixed;
+GMAT A16_LM.SPADSRPScaleFactor = 1;
+
+
+% Mission for Apollo 16 Lunar Module impact randomization sweep
+
+%----------------------------------------
+%---------- ForceModels
+%----------------------------------------
+
+Create ForceModel MoonProp_ForceModel;
+GMAT MoonProp_ForceModel.CentralBody = Luna;
+GMAT MoonProp_ForceModel.PrimaryBodies = {Luna};
+GMAT MoonProp_ForceModel.PointMasses = {Earth, Jupiter, Mars, Neptune, Saturn, Sun, Uranus, Venus};
+GMAT MoonProp_ForceModel.Drag = None;
+GMAT MoonProp_ForceModel.SRP = On;
+GMAT MoonProp_ForceModel.RelativisticCorrection = Off;
+GMAT MoonProp_ForceModel.ErrorControl = RSSState;
+GMAT MoonProp_ForceModel.GravityField.Luna.Degree = 200;
+GMAT MoonProp_ForceModel.GravityField.Luna.Order = 200;
+GMAT MoonProp_ForceModel.GravityField.Luna.StmLimit = 200;
+GMAT MoonProp_ForceModel.GravityField.Luna.PotentialFile = 'C:\Users\roger\AppData\Local\GMAT\R2018a\data\gravity\luna\gggrx_1200a_sha.tab';
+GMAT MoonProp_ForceModel.GravityField.Luna.TideModel = 'None';
+GMAT MoonProp_ForceModel.SRP.Flux = 1367;
+GMAT MoonProp_ForceModel.SRP.SRPModel = Spherical;
+GMAT MoonProp_ForceModel.SRP.Nominal_Sun = 149597870.691;
+
+%----------------------------------------
+%---------- Propagators
+%----------------------------------------
+
+Create Propagator MoonProp;
+GMAT MoonProp.FM = MoonProp_ForceModel;
+GMAT MoonProp.Type = PrinceDormand78;
+GMAT MoonProp.InitialStepSize = 0.01;
+GMAT MoonProp.Accuracy = 9.999999999999999e-012;
+GMAT MoonProp.MinStep = 0.001;
+GMAT MoonProp.MaxStep = 100;
+GMAT MoonProp.MaxStepAttempts = 50;
+GMAT MoonProp.StopIfAccuracyIsViolated = true;
+
+%----------------------------------------
+%---------- Coordinate Systems
+%----------------------------------------
+
+Create CoordinateSystem MoonInertial;
+GMAT MoonInertial.Origin = Luna;
+GMAT MoonInertial.Axes = BodyInertial;
+
+Create CoordinateSystem LunaFixed;
+GMAT LunaFixed.Origin = Luna;
+GMAT LunaFixed.Axes = BodyFixed;
+
+
+%----------------------------------------
+%---------- Subscribers
+%----------------------------------------
+
+
+Create ReportFile HighsAndLows;
+GMAT HighsAndLows.SolverIterations = Current;
+GMAT HighsAndLows.UpperLeft = [ 0 0 ];
+GMAT HighsAndLows.Size = [ 0 0 ];
+GMAT HighsAndLows.RelativeZOrder = 0;
+GMAT HighsAndLows.Maximized = false;
+GMAT HighsAndLows.Filename = 'perilune.csv';
+GMAT HighsAndLows.Precision = 16;
+GMAT HighsAndLows.Add = {A16_LM.UTCModJulian, A16_LM.UTCGregorian, A16_LM.Luna.Longitude, A16_LM.Luna.Latitude, A16_LM.Luna.Altitude};
+GMAT HighsAndLows.WriteHeaders = true;
+GMAT HighsAndLows.LeftJustify = On;
+GMAT HighsAndLows.ZeroFill = Off;
+GMAT HighsAndLows.FixedWidth = false;
+GMAT HighsAndLows.Delimiter = ',';
+GMAT HighsAndLows.ColumnWidth = 23;
+GMAT HighsAndLows.WriteReport = false;
+
+Create ReportFile LatLongAlt;
+GMAT LatLongAlt.SolverIterations = Current;
+GMAT LatLongAlt.UpperLeft = [ 0 0 ];
+GMAT LatLongAlt.Size = [ 0.5984776403425309 0.7973856209150327 ];
+GMAT LatLongAlt.RelativeZOrder = 243;
+GMAT LatLongAlt.Maximized = false;
+GMAT LatLongAlt.Filename = 'FullGroundTrack.csv';
+GMAT LatLongAlt.Precision = 16;
+GMAT LatLongAlt.Add = {A16_LM.UTCModJulian, A16_LM.UTCGregorian, A16_LM.Luna.Longitude, A16_LM.Luna.Latitude, A16_LM.Luna.Altitude, A16_LM.LunaFixed.PlanetodeticAZI, A16_LM.LunaFixed.PlanetodeticHFPA};
+GMAT LatLongAlt.WriteHeaders = true;
+GMAT LatLongAlt.LeftJustify = On;
+GMAT LatLongAlt.ZeroFill = Off;
+GMAT LatLongAlt.FixedWidth = false;
+GMAT LatLongAlt.Delimiter = ',';
+GMAT LatLongAlt.ColumnWidth = 23;
+GMAT LatLongAlt.WriteReport = false;
+
+
+%----------------------------------------
+%---------- Mission Sequence
+%----------------------------------------
+
+BeginMissionSequence;
+
+% start at jettison
+
+% Run until altitude drops below 10 km
+While A16_LM.ElapsedDays < 90 & A16_LM.Luna.Altitude > 10
+   Propagate 'Prop2Apo' MoonProp(A16_LM) {A16_LM.Luna.Apoapsis};
+   Propagate 'Prop2Peri' MoonProp(A16_LM) {A16_LM.Luna.Periapsis};
+   Report 'ReportPeri' HighsAndLows A16_LM.A1ModJulian A16_LM.UTCGregorian A16_LM.Luna.Longitude A16_LM.Luna.Latitude A16_LM.Luna.Altitude;
+EndWhile;
+
+Toggle LatLongAlt On;	% start recording the ground track
+
+% Run until altitude drops below -5 km
+While A16_LM.ElapsedDays < 90 & A16_LM.Luna.Altitude > -5
+   Propagate 'Prop2Apo' MoonProp(A16_LM) {A16_LM.Luna.Apoapsis};
+   Propagate 'Prop2Peri' MoonProp(A16_LM) {A16_LM.Luna.Periapsis};
+   Report 'ReportPeri' HighsAndLows A16_LM.A1ModJulian A16_LM.UTCGregorian A16_LM.Luna.Longitude A16_LM.Luna.Latitude A16_LM.Luna.Altitude;
+EndWhile;
+
+Stop;
